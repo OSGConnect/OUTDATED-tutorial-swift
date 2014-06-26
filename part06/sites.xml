@@ -1,0 +1,21 @@
+
+<config>
+  <pool handle="osg">
+    <execution provider="coaster" jobmanager="local:condor"/>
+    <profile namespace="karajan" key="jobThrottle">5.00</profile>
+    <profile namespace="karajan" key="initialScore">10000</profile>
+    <profile namespace="globus"  key="jobsPerNode">1</profile>
+    <profile namespace="globus"  key="maxtime">3600</profile>
+    <profile namespace="globus"  key="maxWalltime">00:01:00</profile>
+    <profile namespace="globus"  key="highOverAllocation">10000</profile>
+    <profile namespace="globus"  key="lowOverAllocation">10000</profile>
+    <profile namespace="globus"  key="slots">20</profile> 
+    <profile namespace="globus"  key="maxNodes">1</profile>
+    <profile namespace="globus"  key="nodeGranularity">1</profile>
+    <workdirectory>.</workdirectory>  <!-- Alt: /tmp/swift/OSG/{env.USER} -->
+    <!-- For OSGConnect -->
+    <profile namespace="globus"  key="condor.+ProjectName">"Swift"</profile>
+    <profile namespace="globus"  key="jobType">nonshared</profile>
+
+  </pool>
+</config>

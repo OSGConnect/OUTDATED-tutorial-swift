@@ -1,0 +1,10 @@
+#! /bin/bash
+
+if [ -d service ]; then
+  ( cd service
+    rm -rf cf sites.xml hosts.txt logs *.log
+  )
+else
+  echo ERROR: no service directory
+fi
+

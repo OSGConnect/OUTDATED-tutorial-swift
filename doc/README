@@ -1,0 +1,887 @@
+Tutorial: Swift parallel scripting on OSG Connect
+================================================
+
+////
+
+Outline
+
+* Introductory exercises
+
+p1 - Run an application under Swift
+
+p2 - Parallel loops with foreach
+
+p3 - Merging/reducing the results of a parallel foreach loop
+
+p4 - Running on the remote site nodes
+
+p5 - Running the stats summary step on the remote site
+
+p6 - Add additional apps for generating seeds remotely 
+
+* Advanced exercises
+
+Running R and BLAST
+
+Running on multiple resources
+
+Using OSG Connect and Globus Data Services
+
+////
+
+
+Introduction: Why Parallel Scripting?
+------------------------------------
+
+Swift is a simple scripting language for executing many instances of
+ordinary application programs on distributed parallel resources.
+Swift scripts run many copies of ordinary programs concurrently, using
+statements like this:
+
+-----
+foreach protein in proteinList {
+  runBLAST(protein);
+}
+-----
+
+Swift acts like a structured "shell" language. It runs programs
+concurrently as soon as their inputs are available, reducing the need
+for complex parallel programming.  Swift expresses your workflow
+in a portable fashion: The same script runs on grids like OSG, as well
+as on multicore computers, clusters, clouds, and supercomputers.
+
+In this tutorial, you'll be able to first try a few Swift examples
+(parts 1-3) on the OSG Connect login host, to get a sense of the
+language. Then in parts 4-6 you'll run similar workflows on
+distributed OSG Connect resources, and see how more complex workflows
+can be expressed with Swift scripts.
+
+Workflow tutorial setup
+-----------------------
+
+To get started, do:
+
+-----
+$ cd $HOME
+$ tutorial swift
+$ cd osg-swift
+-----
+
+Verify your environment
+~~~~~~~~~~~~~~~~~~~~~~~
+
+To verify that Swift (and the Java environment it requires) are working, do:
+
+-----
+$ java -version   # verify that you have Oracle JAVA 1.6 or later
+$ swift -version  # verify that you have Swift 0.94.1 (RC2 revision)
+-----
+
+NOTE: If you re-login or open new ssh sessions, you will need to
+re-run `source setup.sh` in each ssh window:
+
+-----
+$ cd $HOME/osg-swift     # change to the newly created tutorial directory
+$ source setup.sh        # sets PATH and swift config files
+-----
+
+To check out the tutorial scripts from SVN
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you later want to get the most recent version of this tutorial from
+the Swift Subversion repository, do:
+
+-----
+$ svn co https://svn.ci.uchicago.edu/svn/vdl2/SwiftTutorials/OSG-Swift 
+-----
+
+This will create a directory called "OSG-Swift" which contains all of the
+files used in this tutorial.
+
+Simple "science applications" for the workflow tutorial
+-------------------------------------------------------
+
+This tutorial is based on two simple example programs (both
+implemented as bash shell scripts) that serve a very simple stand-ins
+for real science applications: `simulation.sh` and `stats.sh`.
+
+simulation.sh
+~~~~~~~~~~~~
+
+The simulation.sh script serves as a trivial substitute for a complex
+scientific simulation application. It generates and prints a set of
+one or more random integers in the range [0-2^62) as controlled by its
+command line arguments, which are:
+
+-----
+$ ./app/simulate.sh --help
+./app/simulate.sh: usage:
+    -b|--bias       offset bias: add this integer to all results [0]
+    -B|--biasfile   file of integer biases to add to results [none]
+    -l|--log        generate a log in stderr if not null [y]
+    -n|--nvalues    print this many values per simulation [1]         
+    -r|--range      range (limit) of generated results [100]
+    -s|--seed       use this integer [0..32767] as a seed [none]
+    -S|--seedfile   use this file (containing integer seeds [0..32767]) one per line [none]
+    -t|--timesteps  number of simulated "timesteps" in seconds (determines runtime) [1]
+    -x|--scale      scale the results by this integer [1]
+    -h|-?|?|--help  print this help
+$ 
+-----
+
+All of thess arguments are optional, with default values indicated above as `[n]`.
+
+////
+.simulation.sh arguments
+[width="80%",cols="^2,10",options="header"]
+
+|=======================
+|Argument|Short|Description
+|1    |runtime: sets run time of simulation.sh in seconds
+|2    |range: limits generated values to the range [0,range-1]
+|3    |biasfile: add the integer contained in this file to each value generated
+|4    |scale: multiplies each generated value by this integer
+|5    |count: number of values to generate in the simulation
+|=======================
+////
+
+With no arguments, simulate.sh prints 1 number in the range of
+1-100. Otherwise it generates n numbers of the form (R*scale)+bias
+where R is a random integer. By default it logs information about its
+execution environment to stderr.  Here's some examples of its usage:
+
+-----
+$ simulate.sh 2>log
+       5
+$ head -4 log
+
+Called as: /home/wilde/swift/tut/CIC_2013-08-09/app/simulate.sh: 
+Start time: Thu Aug 22 12:40:24 CDT 2013
+Running on node: login01.osgconnect.net
+
+$ simulate.sh -n 4 -r 1000000 2>log
+  239454
+  386702
+   13849
+  873526
+
+$ simulate.sh -n 3 -r 1000000 -x 100 2>log
+ 6643700
+62182300
+ 5230600
+
+$ simulate.sh -n 2 -r 1000 -x 1000 2>log
+  565000
+  636000
+
+$ time simulate.sh -n 2 -r 1000 -x 1000 -t 3 2>log
+  336000
+  320000
+real    0m3.012s
+user    0m0.005s
+sys     0m0.006s
+-----
+
+stats.sh
+~~~~~~~
+The stats.sh script serves as a trivial model of an "analysis" program. It reads N files each containing M integers and simply prints the average
+of all those numbers to stdout. Similarly to simulate.sh it logs environmental information to the stderr.
+
+-----
+$ ls f*
+f1  f2	f3  f4
+
+$ cat f*
+25
+60
+40
+75
+
+$ stats.sh f* 2>log
+50
+-----
+
+
+Basic of the Swift language with local execution
+------------------------------------------------
+
+A Summary of Swift in a nutshell
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Swift scripts are text files ending in `.swift` The `swift` command
+runs on any host, and executes these scripts. `swift` is a Java
+application, which you can install almost anywhere.  On Linux, just
+unpack the distribution `tar` file and add its `bin/` directory to
+your `PATH`.
+
+* Swift scripts run ordinary applications, just like shell scripts
+do. Swift makes it easy to run these applications on parallel and
+remote computers (from laptops to supercomputers). If you can `ssh` to
+the system, Swift can likely run applications there.
+
+* The details of where to run applications and how to get files back
+and forth are described in configuration files separate from your
+program. Swift speaks ssh, PBS, Condor, SLURM, LSF, SGE, Cobalt, and
+Globus to run applications, and scp, http, ftp, and GridFTP to move
+data.
+
+* The Swift language has 5 main data types: `boolean`, `int`,
+`string`, `float`, and `file`. Collections of these are dynamic,
+sparse arrays of arbitrary dimension and structures of scalars and/or
+arrays defined by the `type` declaration.
+
+* Swift file variables are "mapped" to external files. Swift sends
+files to and from remote systems for you automatically.
+
+* Swift variables are "single assignment": once you set them you can't
+change them (in a given block of code).  This makes Swift a natural,
+"parallel data flow" language. This programming model keeps your
+workflow scripts simple and easy to write and understand.
+
+* Swift lets you define functions to "wrap" application programs, and
+to cleanly structure more complex scripts. Swift `app` functions take
+files and parameters as inputs and return files as outputs.
+
+* A compact set of built-in functions for string and file
+manipulation, type conversions, high level IO, etc. is provided.
+Swift's equivalent of `printf()` is `tracef()`, with limited and
+slightly different format codes.
+
+* Swift's `foreach {}` statement is the main parallel workhorse of the
+language, and executes all iterations of the loop concurrently. The
+actual number of parallel tasks executed is based on available
+resources and settable "throttles".
+
+* In fact, Swift conceptually executes *all* the statements,
+expressions and function calls in your program in parallel, based on
+data flow. These are similarly throttled based on available resources
+and settings.
+
+* Swift also has `if` and `switch` statements for conditional
+execution. These are seldom needed in simple workflows but they enable
+very dynamic workflow patterns to be specified.
+
+
+We'll see many of these points in action in the examples below. Lets
+get started!
+
+Part 1: Run a single application under Swift
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The first swift script, p1.swift, runs simulate.sh to generate a
+single random number. It writes the number to a file.
+
+image::part01.png["p1 workflow",align="center"]
+
+.p1.swift
+-----
+sys::[cat -n ../part01/p1.swift]
+-----
+
+The sites.xml file included in each part directory gives Swift
+information about the machines we will be running on.  It defines
+things like the work directory, the scheduler to use, and how to
+control parallelism. The sites.xml file below will tell Swift to run
+on the local machine only, and run just 1 task at a time.
+
+.sites.xml
+-----
+sys::[cat -n ../part01/sites.xml]
+-----
+
+The app file translates from a Swift app function to the path of an
+executable on the file system.  In this case, it translates from
+"simulate" to simulate.sh and assumes that simulate.sh will be
+available in your $PATH.
+
+.apps
+-----
+sys::[cat -n ../part01/apps]
+-----
+
+To run this script, run the following command:
+-----
+$ cd part01
+$ swift p1.swift
+-----
+
+The simulate application gets translated to simulate.sh within the 'apps' file.
+
+NOTE: Since the file you created is not named, swift will generate a random
+name for the file in a directory called _concurrent. To view the created
+output, run "cat _concurrent/*"
+
+To cleanup the directory and remove all outputs, run:
+-----
+$ ./clean.sh
+------
+
+Part 2: Running an ensemble of many apps in parallel with "foreach" loops
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The p2.swift script introduces the foreach loop. This script runs many
+simulations. The script also shows an example of naming the files. The output files
+are now called sim_N.out.
+
+image::part02.png[align="center"]
+
+In part 2, we also update the apps file. Instead of using shell script (simulate.sh), we use  
+the equivalent python version (simulate.py). The new apps file now looks like this:
+
+-----
+sys::[cat ../part02/apps]
+-----
+
+Swift does not need to know anything about the language an application is written in. The application 
+can be written in Perl, Python, Java, Fortran, or any other language.
+
+.p2.swift
+-----
+sys::[cat -n ../part02/p2.swift]
+-----
+
+To run the script:
+-----
+$ cd ../part02
+$ swift p2.swift
+-----
+
+Part 3: Analyzing results of a parallel ensemble
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+p3.swift introduces a postprocessing step. After all the parallel
+simulations have completed, the files created by simulation.sh will be
+averaged by stats.sh.
+
+image::part03.png[align="center"]
+
+.p3.swift
+----
+sys::[cat -n ../part03/p3.swift]
+----
+
+To run:
+----
+$ cd part03
+$ swift p3.swift
+----
+
+
+Running applications on OSG Connect resources with Swift
+--------------------------------------------------------
+
+Part 4: Running a parallel ensemble on OSG Connect resources
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+p4.swift is the first script that will submit jobs to remote site
+nodes for analysis.  It is similar to earlier scripts, with a few
+minor exceptions. To generalize the script for other types of remote
+execution (e.g., when no shared filesystem is available to the compute
+nodes), the application simulate.sh will get transferred to the worker
+node by Swift, in the same manner as any other input data file.
+
+image::part04.png[align="center"]
+
+.p4.swift
+----
+sys::[cat -n ../part04/p4.swift]
+----
+
+To run:
+----
+$ swift p4.swift
+----
+
+Output files will be named output/sim_N.out.
+
+In order to run on OSG compute nodes, sites.xml was modified. Here is
+the new sites.xml we are using for this example. Note the changes
+between the sites.xml file in this example which specifies "execution
+provider=condor", and the sites.xml file in part 1, which runs locally
+by specifying "execution provider=local".
+
+.sites.xml
+-----
+sys::[cat -n ../part06/sites.xml]
+-----
+
+Below is the updated apps file. Since Swift is staging shell scripts
+remotely to nodes on the cluster, the only application you need to
+define here is the shell.
+
+.apps
+-----
+sys::[cat -n ../part06/apps]
+-----
+
+
+Part 5: Controlling where applications run
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+p5.swift introduces a postprocessing step. After all the parallel
+simulations have completed, the files created by simulation.sh will be
+averaged by stats.sh. This is similar to p3, but all app invocations
+are done on remote nodes with Swift managing file transfers.
+
+image::part05.png[align="center"]
+
+.p5.swift
+----
+sys::[cat -n ../part05/p5.swift]
+----
+
+To run:
+----
+$ swift p5.swift
+----
+
+Part 6: Specifying more complex workflow patterns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+p6.swift build on p5.swift, but adds new apps for generating a random
+seed and a random bias value.
+
+image::part06.png[align="center"]
+
+.p6.swift
+----
+sys::[cat -n ../part06/p6.swift]
+----
+
+
+Use the command below to specify the time for each simulation.
+----
+$ cd ../part06
+$ swift p6.swift -steps=3  # each simulation takes 3 seconds
+----
+
+////
+
+Running Swift scripts on Cloud resources
+----------------------------------------
+
+Setting up the Cloud exercises
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A number of preconfigured Amazon EC2 nodes are set up for running Swift.
+
+Run the Cloud exercises
+~~~~~~~~~~~~~~~~~~~~~~
+
+* Change to cloud dir:
+-----
+   cd ~/cloud
+-----
+* Copy the private key tutorial.pem to your .ssh dir:
+-----
+   cp tutorial.pem ~/.ssh/
+-----
+* Source the setup script on command line:
+-----
+   source ./setup
+-----
+* Run the catsn Swift script:
+-----
+   ./run.catsn
+-----
+* Run the Cloud versions of the Swift scripts p7, p8,and p9.swift:
+-----
+   swift -sites.file sites.xml -config cf -tc.file tc p7.swift
+   swift -sites.file sites.xml -config cf -tc.file tc p8.swift
+   swift -sites.file sites.xml -config cf -tc.file tc p9.swift
+-----
+
+* Add cloud resources to existing examples:
+-----
+   ./addcloud.sh <dir> #where dir is a tutorial script directory
+   e.g.
+   ./addcloud.sh ../part01 #will create a new site pool "both.xml" in ../part01
+-----
+
+* Finally, to clean up the log files, kill agent and shutdown the coaster service:
+-----
+   ./cleanme
+-----
+
+
+Notes on the Cloud exercises
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The run.catsn shell script contains the full command line to call Swift scripts with configuration files. This script runs swift as follows:
+
+swift -sites.file sites.xml -tc.file tc -config cf catsn.swift -n=10
+
+To learn more about the configuration files, see Swift user-guide:
+http://www.ci.uchicago.edu/swift/guides/release-0.94/userguide/userguide.html
+
+
+Running Swift/T on Vesta with Python and R integration
+------------------------------------------------------
+
+Normally it is difficult to run scripted programs such as Python and
+R on the Blue Gene/Q because of the limited OS environment.  However,
+Swift/T allows you to create a composite application that is linked
+into one Cobalt job at run time.  Thus, you can write a scripted
+program that coordinates calls from Swift to C, C++, Fortran, Python,
+R, or Tcl.  All data movement is handled by the Swift/T runtime over
+MPI, removing the overhead of file access.
+
+=== p11 - Scripted parallel numerics with Python and R
+
+As shown on the slides, this example calls the
+http://www.numpy.org[Numpy] numerical libraries via Python as well as
+the http://www.r-project.org[R language] for statistics.  In this
+example, we use Numpy to construct matrices, perform matrix
+arithmetic, and compute determinants.  Since determinant is _O(n^3^)_,
+we compute each determinant in parallel using the Swift +foreach+
+loop.  All result are collected and passed to the R +max()+ function.
+
+==== Scripts
+
+This example is designed to run on Vesta.
+
+To compile and run the script, run:
+
+.run-dets.sh
+----
+  include::part11-swift-py-r/code/run-dets.sh.txt[]
+----
+
+As a reference, an equivalent plain Python code is provided:
+
+.dets.py
+----
+  include::part11-swift-py-r/code/dets.py[]
+----
+
+The Swift script is:
+
+.dets.swift
+----
+  include::part11-swift-py-r/code/dets.swift[]
+----
+
+==== Analysis
+
+The Turbine run time script creates a +TURBINE_OUTPUT+ directory and
+reports it.  Standard output from the job is in +output.txt+.
+
+Use +grep dets+ to find the results printed by the Swift script.  You
+will see each determinant as inserted into the Swift array, and the
+maximal result.
+
+Turbine was launched with +-n 10+; that is, 10 total processes, 8 of
+which are workers, ranks 1-8.  Much of the output is created by rank
+0, the Turbine engine.  (Only one engine is used in this case,
+although Swift/T supports multiple engines for scalability.)  The ADLB
+server runs on rank 9 and produces almost no output.  (Swift/T and
+ADLB support multiple servers.)
+
+You may +grep+ for +python: expression:+ to see the Python expressions
+evaluated on the workers.  Note the rank numbers.
+
+For production cases, you may disable logging by setting
++TURBINE_LOG=0+ in the environment.
+
+=== More information
+
+For more information about Swift/T, see:
+
+* https://sites.google.com/site/exmcomputing/swift-t[Swift/T Overview]
+* http://www.mcs.anl.gov/exm/local/guides/swift.html[Swift/T Guide]
+* http://www.mcs.anl.gov/exm/local/guides/turbine-sites.html[Sites Guide]
+   &mdash; notes for running Swift/T on various systems
+
+
+Running MPI apps under Swift
+----------------------------
+
+Modis - Satellite image data processing
+---------------------------------------
+
+In this section we will use swift to process data from a large dataset of
+files that categorize the Earth's surface, derived from the MODIS sensor
+instruments that orbit the Earth on two NASA satellites of the Earth Observing System.
+
+The dataset we use (for 2002, named +mcd12q1+) consists of 317 "tile" files
+that categorize every 250-meter square of non-ocean surface of the Earth into
+one of 17 "land cover" categories (for example, water, ice, forest, barren, urban).
+Each pixel of these data files has a value of 0 to 16, describing one square
+of the Earth's surface at a specific point in time. Each tile file has
+approximately 5 million 1-byte pixels (5.7 MB), covering 2400x2400 250-meter
+squares, based on a specific map projection.
+
+image:sinusoidal_v5.gif[]
+
+modis01 - Process 1 image
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The first modis example defines one app function called getLandUse.
+This app takes a satellite image (data/modis/2002/h00v09.pgm.gz) as
+input. getLandUse creates a text file called landuse/h00v08.landuse.byfreq
+that counts the frequency of each land type defined in the input image.
+
+.modis01.swift
+-----
+type imagefile;
+type landuse;
+
+app (landuse output) getLandUse (imagefile input)
+{
+  getlanduse @filename(input) stdout=@filename(output);
+}
+
+imagefile modisImage <"data/global/h00v09.rgb">;
+landuse result <"landuse/h00v09.landuse.byfreq">;
+result = getLandUse(modisImage);
+-----
+
+
+To run modis01.swift:
+-----
+$ cd modis/modis01/
+$ swift modis01.swift
+-----
+
+modis02 - Process multiple images in parallel
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The second modis example expands upon the first example by running getLandUse
+with multiple (317) input files. Ouptut files are stored in the landuse directory.
+In order to map several input files we will use the ext mapper here to specify
+the mapper script, location a suffix to identify matching files.
+TODO: More on mappers
+
+.modis02.swift
+-----
+type imagefile;
+type landuse;
+
+app (landuse output) getLandUse (imagefile input)
+{
+  getlanduse @filename(input) stdout=@filename(output);
+}
+
+# Constants and command line arguments
+int nFiles       = @toInt(@arg("nfiles", "1000"));
+string MODISdir  = @arg("modisdir", "data/global");
+
+# Input Dataset
+imagefile geos[] <ext; exec="../bin/modis.mapper", location=MODISdir, suffix=".rgb", n=n\
+Files>;
+
+# Compute the land use summary of each MODIS tile
+landuse land[] <structured_regexp_mapper; source=geos, match="(h..v..)", transform=@strc\
+at("landuse/\\1.landuse.byfreq")>;
+
+foreach g,i in geos {
+    land[i] = getLandUse(g);
+}
+-----
+
+To run modis02.swift
+-----
+$ cd modis/modis02/
+$ swift modis02.swift
+-----
+
+
+modis03 - Analyse the processed images
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The third modis example builds on the previous example. It defines a new app function
+called analyzeLandUse. The analyzeLandUse app examines the data generated by getLandUse
+and creates two summary files called topselected.txt and selectedtiles.txt. These
+files contain information about the top 10 urban areas.
+
+In the previous example, you have noticed that running all 317 input files on
+your laptop, even with 4 tasks a time, is not very efficient.
+
+TODO : In the next example, instead of running locally, we will use a cluster called midway at the University of Chicago to improve performance.
+
+
+.modis03.swift
+-----
+type file;
+type imagefile;
+type landuse;
+
+app (landuse output) getLandUse (imagefile input)
+{
+  getlanduse @filename(input) stdout=@filename(output);
+}
+
+app (file output, file tilelist) analyzeLandUse (landuse input[], string usetype, int ma\
+xnum)
+{
+  analyzelanduse @output @tilelist usetype maxnum @input;
+}
+
+# Constants and command line arguments
+int nFiles       = @toInt(@arg("nfiles", "1000"));
+int nSelect      = @toInt(@arg("nselect", "10"));
+string landType  = @arg("landtype", "urban");
+string MODISdir  = @arg("modisdir", "data/global");
+
+# Input Dataset
+imagefile geos[] <ext; exec="../bin/modis.mapper", location=MODISdir, suffix=".rgb", n=n\
+Files>;
+
+# Compute the land use summary of each MODIS tile
+landuse land[] <structured_regexp_mapper; source=geos, match="(h..v..)", transform=@strc\
+at("landuse/\\1.landuse.byfreq")>;
+
+foreach g,i in geos {
+    land[i] = getLandUse(g);
+}
+
+# Find the top N tiles (by total area of selected landuse types)
+file topSelected <"topselected.txt">;
+file selectedTiles <"selectedtiles.txt">;
+(topSelected, selectedTiles) = analyzeLandUse(land, landType, nSelect);
+
+-----
+
+To run modis03.swift
+-----
+$ cd modis/modis03/
+$ swift modis03.swift
+-----
+
+
+modis04 - Mark the top N tiles on a map
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The fourth modis example adds another app called markMap that looks at selectedtiles.txt
+and highlights the selected areas on a map. It will create a new image called
+gridmap.png which marks the top N tiles on a sinusoidal gridded map.
+
+.modis04.swift
+-----
+type file;
+type imagefile;
+type landuse;
+
+app (landuse output) getLandUse (imagefile input)
+{
+  getlanduse @filename(input) stdout=@filename(output);
+}
+
+app (file output, file tilelist) analyzeLandUse (landuse input[], string usetype, int ma\
+xnum)
+{
+  analyzelanduse @output @tilelist usetype maxnum @input;
+}
+
+app (imagefile grid) markMap (file tilelist)
+{
+  markmap @tilelist @grid;
+}
+
+# Constants and command line arguments
+int nFiles       = @toInt(@arg("nfiles", "1000"));
+int nSelect      = @toInt(@arg("nselect", "10"));
+string landType  = @arg("landtype", "urban");
+string MODISdir  = @arg("modisdir", "data/global");
+
+# Input Dataset
+imagefile geos[] <ext; exec="../bin/modis.mapper", location=MODISdir, suffix=".rgb", n=n\
+Files>;
+
+# Compute the land use summary of each MODIS tile
+landuse land[]    <structured_regexp_mapper; source=geos, match="(h..v..)", transform=@s\
+trcat("landuse/\\1.landuse.byfreq")>;
+
+foreach g,i in geos {
+    land[i] = getLandUse(g);
+}
+
+# Find the top N tiles (by total area of selected landuse types)
+file topSelected <"topselected.txt">;
+file selectedTiles <"selectedtiles.txt">;
+(topSelected, selectedTiles) = analyzeLandUse(land, landType, nSelect);
+
+# Mark the top N tiles on a sinusoidal gridded map
+imagefile gridmap <"gridmap.png">;
+gridmap = markMap(topSelected);
+
+-----
+
+To run modis04.swift
+-----
+$ cd modis/modis04/
+$ swift modis04.swift
+-----
+
+modis05 - Create multi-color tile images
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The fifth modis example extends the previous examples by adding the colorModis app
+to create multi-color images for all tiles.
+
+.modis05.swift
+-----
+type file;
+type imagefile;
+type landuse;
+
+app (landuse output) getLandUse (imagefile input)
+{
+  getlanduse @filename(input) stdout=@filename(output);
+}
+
+app (file output, file tilelist) analyzeLandUse (landuse input[], string usetype, int maxnum)
+{
+  analyzelanduse @output @tilelist usetype maxnum @input;
+}
+
+app (imagefile grid) markMap (file tilelist)
+{
+  markmap @tilelist @grid;
+}
+
+app (imagefile output) colorModis (imagefile input)
+{
+  colormodis @input @output;
+}
+
+# Constants and command line arguments
+int nFiles       = @toInt(@arg("nfiles", "1000"));
+int nSelect      = @toInt(@arg("nselect", "10"));
+string landType  = @arg("landtype", "urban");
+string MODISdir  = @arg("modisdir", "data/global");
+
+# Input Dataset
+imagefile geos[] <ext; exec="../bin/modis.mapper", location=MODISdir, suffix=".rgb", n=nFiles>;
+
+# Compute the land use summary of each MODIS tile
+landuse land[] <structured_regexp_mapper; source=geos, match="(h..v..)", transform=@strcat("landuse/\\1.landuse.byfreq")>;
+
+foreach g,i in geos {
+    land[i] = getLandUse(g);
+}
+
+# Find the top N tiles (by total area of selected landuse types)
+file topSelected <"topselected.txt">;
+file selectedTiles <"selectedtiles.txt">;
+(topSelected, selectedTiles) = analyzeLandUse(land, landType, nSelect);
+
+# Mark the top N tiles on a sinusoidal gridded map
+imagefile gridmap <"gridmap.png">;
+gridmap = markMap(topSelected);
+
+# Create multi-color images for all tiles
+imagefile colorImage[] <structured_regexp_mapper; source=geos, match="(h..v..)", transform=@strcat("colorImages/\\1.color.rgb")>;
+
+foreach g, i in geos {
+  colorImage[i] = colorModis(g);
+}
+
+-----
+
+
+To run modis05.swift:
+-----
+$ cd modis/modis05/
+$ swift modis05.swift
+-----
+
+////

@@ -1,0 +1,3 @@
+persistent-coasters sh          /bin/bash
+localhost           local_sh    /bin/bash
+

@@ -1,0 +1,4 @@
+localhost simulate simulate.sh
+localhost stats stats.sh
+persistent-coasters simulate simulate.sh
+persistent-coasters stats stats.sh

@@ -1,0 +1,78 @@
+#!/bin/bash
+
+echo 0: $0
+echo BASH_SOURCE: ${BASH_SOURCE[0]}
+
+if [ ${BASH_VERSINFO[0]} -gt 2 -a "${BASH_SOURCE[0]}" = "${0}" ] ; then
+  echo ERROR_1: script ${BASH_SOURCE[0]} must be executed as: source service/startcloud
+  exit 1
+fi
+
+if [ ${BASH_VERSINFO[0]} -gt 2 -a "${BASH_SOURCE[0]}" != service/startcloud ] ; then
+  echo ERROR_2: script ${BASH_SOURCE[0]} must be executed as: source service/startcloud
+  return 1
+fi
+
+addlocalpool()
+{
+cat <<END
+  <pool handle="localhost">
+    <execution provider="coaster" jobmanager="local:local" url="http://localhost"/>
+    <profile key="jobThrottle" namespace="karajan">.23</profile>
+    <profile namespace="karajan" key="initialScore">10000</profile>
+    <workdirectory>$PWD/swiftwork</workdirectory>
+  </pool>
+END
+}
+
+echo -e "\nSetting up Swift cloud service in $PWD/service\n"
+
+( cd service
+
+# pick 3 random hosts from pool # FIXME: disabled for now because sort -R is not univerally available
+# sort -R pool.txt |head -n 3 > hosts.txt
+# FIXME: Get the hosts from a dynamic file for each tutorial
+
+head -n 3 pool.txt > hosts.txt 
+
+echo "Enabling cloud host access in $HOME/.ssh/config"
+touch ~/.ssh/config
+chmod 600 ~/.ssh/config
+
+while read line
+do
+  if grep -q $line ~/.ssh/config; then :
+  else
+    echo -ne "Host $line\n  IdentityFile ~/.ssh/tutorial.pem\n  User root\n" >> ~/.ssh/config
+  fi
+done < hosts.txt
+
+if grep -q StrictHostKeyChecking ~/.ssh/config; then :
+else
+   echo -ne "\nHost * \n  StrictHostKeyChecking=no\n" >> ~/.ssh/config
+fi
+
+export WORKER_HOSTS=`cat hosts.txt`
+chmod 0600 ~/.ssh/tutorial.pem
+
+echo "Starting ssh-agent"
+eval $(ssh-agent)
+ssh-add ~/.ssh/tutorial.pem
+
+echo "Starting Swift coaster service"
+start-coaster-service
+
+mv sites.xml _temp.xml
+grep -v config _temp.xml | ( 
+  echo "<config>"
+  cat
+  addlocalpool
+  echo "</config>"
+) >sites.xml
+rm _temp.xml
+mv sites.xml ..
+
+echo "Swift cloud setup complete"
+# rm -rf hi.* hi-*
+
+) # Leave user in original directory

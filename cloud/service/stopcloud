@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo "stopping coaster service"
+stop-coaster-service
+
+echo "Killing ssh-agent"
+killall -u $USER ssh-agent ssh
+

@@ -1,0 +1,1 @@
+grep node: output/*.log | sed -e 's/^.*Job is //' | sort | uniq -c
