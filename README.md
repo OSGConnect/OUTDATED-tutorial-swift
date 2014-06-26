@@ -371,7 +371,10 @@ $ cat output/stats.out
 ```
  
 Further information and references:
- [Latest version of this tutorial](http://swift-lang.org/links/cic-tutorial.html)
- [SWIFT user guide](http://swift-lang.org/guides/release-0.94/userguide/userguide.html)
- [SWIFT documentation](http://swift-lang.org/docs/index.php)
+
+  [Latest version of this tutorial](http://swift-lang.org/links/cic-tutorial.html)
+
+  [SWIFT user guide](http://swift-lang.org/guides/release-0.94/userguide/userguide.html)
+
+  [SWIFT documentation](http://swift-lang.org/docs/index.php)
 
