@@ -8,16 +8,13 @@ This is a quick introduction to using SWIFT on OSG Connect. SWIFT is a parallel 
 Conventions
 -----------
 The following conventions are used throughout this document: 
-
-    * All of the following exercises must be done using the BASH shell
-
-    * The setup.sh in the tutorial directory is sourced before running any of the tutorial:
+  * All of the following exercises must be done using the BASH shell
+  * The setup.sh in the tutorial directory is sourced before running any of the tutorial:
 ```
     $ source setup.sh
 ```    
-    * Each part of the exercises below is located in a separate directory (e.g. part01, part02, ...)
-
-    * To cleanup the directory and remove all outputs, after running SWIFT, run in the exercise directory:
+  * Each part of the exercises below is located in a separate directory (e.g. part01, part02, ...)
+  * To cleanup the directory and remove all outputs, after running SWIFT, run in the exercise directory:
 ```   
     $ ../bin/cleanup
 ```
@@ -374,8 +371,7 @@ $ cat output/stats.out
 ```
  
 Further information and references:
-
-    [Latest version of this tutorial](http://swift-lang.org/links/cic-tutorial.html)
-    [SWIFT user guide](http://swift-lang.org/guides/release-0.94/userguide/userguide.html)
-    [SWIFT documentation](http://swift-lang.org/docs/index.php)
+ [Latest version of this tutorial](http://swift-lang.org/links/cic-tutorial.html)
+ [SWIFT user guide](http://swift-lang.org/guides/release-0.94/userguide/userguide.html)
+ [SWIFT documentation](http://swift-lang.org/docs/index.php)
 
