@@ -227,7 +227,7 @@ The output will be named output/sim_N.out:
 $ cat output/average.out
 51
 ```
-SWIFT uses parameters in the sites.xml file to determine parameters to use when submitting jobs to HTCondor.  The key values to note are the pool element which sets the name for the pool that SWIFT submits to.  In addition, there is a condor.The +ProjectName value needs to be set to the project that you're submitting as. The source for the sites.xml file follows:
+SWIFT uses parameters in the sites.xml file to determine parameters to use when submitting jobs to HTCondor.  The key value to note is the pool element which sets the name for the pool that SWIFT submits to. The source for the sites.xml file follows:
 
 ```xml
 <config>
@@ -248,7 +248,6 @@ SWIFT uses parameters in the sites.xml file to determine parameters to use when 
     <!-- For UC3: -->
     <profile namespace="globus" key="condor.+AccountingGroup">"group_friends.{env.USER}"</profile>
     <!-- For OSGConnect -->
-    <profile namespace="globus" key="condor.+ProjectName">"con-train"</profile>
     <profile namespace="globus" key="jobType">nonshared</profile>
   </pool>
 </config>
