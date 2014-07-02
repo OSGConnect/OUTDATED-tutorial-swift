@@ -14,7 +14,6 @@
     <profile namespace="globus"  key="nodeGranularity">1</profile>
     <workdirectory>.</workdirectory>  <!-- Alt: /tmp/swift/OSG/{env.USER} -->
     <!-- For OSGConnect -->
-    <profile namespace="globus"  key="condor.+ProjectName">"Swift"</profile>
     <profile namespace="globus"  key="jobType">nonshared</profile>
 
   </pool>
