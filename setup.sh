@@ -68,10 +68,8 @@ provider.staging.pin.swiftfiles=false
 
 END
 
-if [ $(hostname) = uc3-sub.uchicago.edu ]; then
-  CONTACTHOST=128.135.158.243
-elif [ $(hostname) = login01.osgconnect.net ]; then
-  CONTACTHOST=128.135.158.173
+if [ $(hostname) = login01.osgconnect.net ]; then
+  CONTACTHOST=192.170.227.195
 else
   printf "\n\nERROR: Hostname $(hostname) is unknown: modiy setup.sh accordingly.\n\n"
   return
@@ -96,8 +94,6 @@ cat >sites.condor <<END
     <workdirectory>.</workdirectory>  <!-- Alt: /tmp/swift/OSG/{env.USER} -->
     <!-- For UC3: -->
     <profile namespace="globus"  key="condor.+AccountingGroup">"group_friends.{env.USER}"</profile>
-    <!-- For OSGConnect -->
-    <profile namespace="globus"  key="condor.+ProjectName">"Swift"</profile>
     <profile namespace="globus"  key="jobType">nonshared</profile>
 
   </pool>
