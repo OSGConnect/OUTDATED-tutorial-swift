@@ -1,12 +1,11 @@
-OSG Connect SWIFT Tutorial
-==========================
+# Using SWIFT on OSG Connect
 
-Introduction
-------------
-This is a quick introduction to using SWIFT on OSG Connect. SWIFT is a parallel scripting language that lets you easily incorporate workflows using different applications and convert them into a simple script file.  The SWIFT runtime takes this script and tries to run as much of the workflow in parallel as possible. Once you finish using the exercises on this page you will be able to create workflows in SWIFT.
+## Introduction
 
-Conventions
------------
+This is a quick introduction to using SWIFT on OSG Connect. [SWIFT](http://swift-lang.org/main/index.php) is a parallel scripting language that lets you easily incorporate workflows using different applications and convert them into a simple script file.  The SWIFT runtime takes this script and tries to run as much of the workflow in parallel as possible. Once you finish using the exercises on this page you will be able to create workflows in SWIFT.
+
+## Conventions
+
 The following conventions are used throughout this document: 
   * All of the following exercises must be done using the BASH shell
   * The setup.sh in the tutorial directory is sourced before running any of the tutorial:
@@ -18,9 +17,10 @@ The following conventions are used throughout this document:
 ```   
     $ ../bin/cleanup
 ```
-Introductory Exercises
-----------------------
-#### Scripts
+
+## Introductory Exercises
+
+### Scripts
 
 The introductory exercises use two different mock "science applications" that act as simple stand-ins for real since applications.
 
@@ -47,6 +47,7 @@ Argument       |      Description
 -h,-?,?,--help |  print this help
 
 With no arguments, simulate.sh prints 1 number in the range of 1-100. Otherwise it generates n numbers of the form R * scale + bias where R is a random integer. By default it logs information about its execution environment to stderr. Here are some examples of its usage:
+
 ```
 $ simulate.sh 2>log
        5
@@ -94,11 +95,12 @@ $ cat f*
 $ stats.sh f*
 50
 ```
-Part 1 - Run an application under Swift
----------------------------------------
-The first swift script, p1.swift, runs simulate.sh to generate a single random number. It writes the number to a file.
 
-In the p1.swift file below, the [app](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_mapping_of_app_semantics_into_unix_process_execution_semantics) construct is used to tell SWIFT how to use the simulate.sh script and what the script expects for its inputs and outputs. The simulate application gets translated to simulate.sh using the apps file for the mapping. The [file](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_the_single_file_mapper) construct indicates the name of the file used to hold the output from the simulate script. The source for the p1.swift file follows:
+## Part 1 - Run an application under Swift
+
+The first swift script, `p1.swift`, runs simulate.sh to generate a single random number. It writes the number to a file. 
+
+In the `p1.swift` file below, the [app](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_mapping_of_app_semantics_into_unix_process_execution_semantics) construct is used to tell SWIFT how to use the simulate.sh script and what the script expects for its inputs and outputs. The simulate application gets translated to simulate.sh using the apps file for the mapping. The [file](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_the_single_file_mapper) construct indicates the name of the file used to hold the output from the simulate script. The source for the p1.swift file follows:
 
 ```	
 type file;
@@ -120,9 +122,10 @@ Now, view the output:
 $ cat sim.out
  95
 ```
-Part 2 - Running an ensemble of many apps in parallel with "foreach" loops
---------------------------------------------------------------------------
-The p2.swift script introduces the [foreach](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_arrays_and_parallel_execution) loop to run multiple instances of the simulate script in parallel. Output files are named using the file mapper so each instance writes to output/sim_N.out. The source for the p2.swift script follows:
+
+## Part 2 - Running an ensemble of many apps in parallel with "foreach" loops
+
+The `p2.swift` script introduces the [foreach](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_arrays_and_parallel_execution) loop to run multiple instances of the simulate script in parallel. Output files are named using the file mapper so each instance writes to output/sim_N.out. The source for the p2.swift script follows:
 
 ```	
 type file;
@@ -147,9 +150,9 @@ sim_0.out  sim_2.out  sim_4.out  sim_6.out  sim_8.out
 sim_1.out  sim_3.out  sim_5.out  sim_7.out  sim_9.out
 ```
  
-Part 3 - merging/reducing the results of a parallel foreach loop
-----------------------------------------------------------------
-The p3.swift script introduces a postprocessing step. After all the parallel simulations have completed, the files created by simulation.sh will be averaged by stats.sh.  The [@filenames](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_filenames) functions is used to store filenames being transfer outputs from the simulate scripts to the stats script. The source for the p3.swift script follows:
+## Part 3 - merging/reducing the results of a parallel foreach loop
+
+The `p3.swift` script introduces a postprocessing step. After all the parallel simulations have completed, the files created by simulation.sh will be averaged by stats.sh.  The [@filenames](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_filenames) functions is used to store filenames being transfer outputs from the simulate scripts to the stats script. The source for the p3.swift script follows:
 
 
 ```
@@ -186,9 +189,10 @@ $ cat output/average.out
 51
 ```
 
-Part 4 - Running a parallel ensemble on OSG Connect resources
--------------------------------------------------------------
-This is the first script that will submit jobs to OSG through OSG connect. It is similar to earlier scripts, with a few minor exceptions. To generalize the script for other types of remote execution (e.g., when no shared filesystem is available to the compute nodes), the application simulate.sh will get transferred to the worker node by Swift, in the same manner as any other input data file. The source for the p4.swift script follows:
+## Part 4 - Running a parallel ensemble on OSG Connect resources
+
+This is the first script that will submit jobs to OSG through OSG connect. It is similar to earlier scripts, with a few minor exceptions. To generalize the script for other types of remote execution (e.g., when no shared filesystem is available to the compute nodes), the application simulate.sh will get transferred to the worker node by Swift, in the same manner as any other input data file. The source for the `p4.swift` script follows:
+
 ```	
 type file;
  
@@ -258,9 +262,9 @@ The other file that SWIFT uses is the apps file.  This file lays out the mapping
 osg sh /bin/bash
 ```
  
-Part 5 - Linking applications together on OSG-Connect
------------------------------------------------------
-The p5.swift introduces a postprocessing step. After all the parallel simulations have completed, the files created by simulation.sh will be averaged by stats.sh. This is similar to p3, but all app invocations are done on remote nodes with Swift managing file transfers.  The source for p5.swift follows:
+## Part 5 - Linking applications together on OSG-Connect
+
+The `p5.swift` introduces a postprocessing step. After all the parallel simulations have completed, the files created by simulation.sh will be averaged by stats.sh. This is similar to p3, but all app invocations are done on remote nodes with Swift managing file transfers.  The source for p5.swift follows:
 ```	
 type file;
 # Define external application programs to be invoked
@@ -309,9 +313,9 @@ The output will be named output/stats.out:
 $ cat output/stats.out
 5143382
 ```
-Part 6 - Specifying more complex workflow patterns
---------------------------------------------------
-The p6.swift script builds on p5.swift, but adds new apps for generating a random seed and a random bias value.  The script's source is shown below:
+## Part 6 - Specifying more complex workflow patterns
+
+The `p6.swift` script builds on p5.swift, but adds new apps for generating a random seed and a random bias value.  The script's source is shown below:
 
 ```	
 type file;
@@ -373,11 +377,11 @@ $ cat output/stats.out
 4407482
 ```
  
-Further information and references:
+## Further information and references
 
-  [Latest version of this tutorial](http://swift-lang.org/links/cic-tutorial.html)
+* [Latest version of this tutorial](http://swift-lang.org/links/cic-tutorial.html)
+* [SWIFT user guide](http://swift-lang.org/guides/release-0.94/userguide/userguide.html)
+* [SWIFT documentation](http://swift-lang.org/docs/index.php)
 
-  [SWIFT user guide](http://swift-lang.org/guides/release-0.94/userguide/userguide.html)
-
-  [SWIFT documentation](http://swift-lang.org/docs/index.php)
-
+## Getting Help
+For assistance or questions, please email the OSG User Support team  at `user-support@opensciencegrid.org` or visit the [help desk and community forums](http://support.opensciencegrid.org).
