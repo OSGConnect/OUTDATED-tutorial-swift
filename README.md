@@ -1,4 +1,4 @@
-[title]: - "SWIFT" 
+[title]: - "Swift" 
 
 ## Introduction
 
