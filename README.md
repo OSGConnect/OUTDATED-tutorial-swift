@@ -144,9 +144,12 @@ The `p2.swift` script introduces the [foreach](http://swift-lang.org/guides/rele
 	  f = mysim();
 	}
 To run the script:
+
 	$ cd part02
 	$ swift p2.swift
+
 Output files will be named output/sim_N.out:
+
 	$ ls output/
 	sim_0.out  sim_2.out  sim_4.out  sim_6.out  sim_8.out
 	sim_1.out  sim_3.out  sim_5.out  sim_7.out  sim_9.out
