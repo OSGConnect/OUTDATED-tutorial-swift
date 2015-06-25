@@ -10,11 +10,11 @@ The following conventions are used throughout this document:
   * All of the following exercises must be done using the Bash shell
   * The `setup.sh` in the tutorial directory is sourced before running any of the tutorial:
   
-	$ source setup.sh
+  	$ source setup.sh
 
   * Each part of the exercises below is located in a separate directory (e.g. part01, part02, ...)
   * To cleanup the directory and remove all outputs, after running Swift, run in the exercise directory:
- 
+  
 	$ ../bin/cleanup
 
 ## Introductory Exercises
