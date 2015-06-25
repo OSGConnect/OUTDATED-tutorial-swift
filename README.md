@@ -9,10 +9,13 @@ This is a quick introduction to using SWIFT on OSG Connect. [SWIFT](http://swift
 The following conventions are used throughout this document: 
   * All of the following exercises must be done using the BASH shell
   * The setup.sh in the tutorial directory is sourced before running any of the tutorial:
-	    $ source setup.sh
+  
+	$ source setup.sh
+
   * Each part of the exercises below is located in a separate directory (e.g. part01, part02, ...)
   * To cleanup the directory and remove all outputs, after running SWIFT, run in the exercise directory:
-	    $ ../bin/cleanup
+ 
+	$ ../bin/cleanup
 
 ## Introductory Exercises
 
@@ -24,7 +27,21 @@ The introductory exercises use two different mock "science applications" that ac
 
 The simulation.sh script is a simple substitute for a scientific simulation application. It generates and prints a set of one or more random integers in the range 0-29,999 as controlled by its optional arguments.
 
-	$ ./app/simulate.sh --help ./app/simulate.sh: usage: -b|--bias offset bias: add this integer to all results [0] -B|--biasfile file of integer biases to add to results [none] -l|--log generate a log in stderr if not null [y] -n|--nvalues print this many values per simulation [1] -r|--range range (limit) of generated results [100] -s|--seed use this integer [0..32767] as a seed [none] -S|--seedfile use this file (containing integer seeds [0..32767]) one per line [none] -t|--timesteps number of simulated "timesteps" in seconds (determines runtime) [1] -x|--scale scale the results by this integer [1] -h|-?|?|--help print this help
+	$ ./app/simulate.sh --help 
+	./app/simulate.sh: 
+	usage: 
+		-b|--bias offset bias: add this integer to all results [0] 
+		-B|--biasfile file of integer biases to add to results [none] 
+		-l|--log generate a log in stderr if not null [y] 
+		-n|--nvalues print this many values per simulation [1] 
+		-r|--range range (limit) of generated results [100] 
+		-s|--seed use this integer [0..32767] as a seed [none] 
+		-S|--seedfile use this file (containing integer seeds [0..32767]) one per line [none] 
+		-t|--timesteps number of simulated "timesteps" in seconds (determines runtime) [1] 
+		-x|--scale scale the results by this integer [1] 
+		-h|-?|?|--help print this help
+	
+
 A table of the arguments:
 
 Argument       |      Description
@@ -71,9 +88,12 @@ With no arguments, simulate.sh prints 1 number in the range of 1-100. Otherwise 
 	real    0m3.012s
 	user    0m0.005s
 	sys     0m0.006s
+
+
 ##### stats.sh 
 
 The stats.sh script serves as a trivial model of an "analysis" program. It reads N files each containing M integers and simply prints the average of all those numbers to stdout. Similarly to simulate.sh, it logs environmental information to the stderr. Here's an example of running the stats.sh script:
+
 	$ ls f*
 	f1  f2  f3  f4
 	 
@@ -101,9 +121,12 @@ In the `p1.swift` file below, the [app](http://swift-lang.org/guides/release-0.9
 	f = mysim();
 
 To run this script:
+
 	$ cd part01
 	$ swift p1.swift
+
 Now, view the output:
+
 	$ cat sim.out
 	 95
 
@@ -132,7 +155,6 @@ Output files will be named output/sim_N.out:
 
 The `p3.swift` script introduces a postprocessing step. After all the parallel simulations have completed, the files created by simulation.sh will be averaged by stats.sh.  The [@filenames](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_filenames) functions is used to store filenames being transfer outputs from the simulate scripts to the stats script. The source for the p3.swift script follows:
 
-
 	type file;
 	app (file o) mysim (int sim_steps, int sim_values)
 	{
@@ -153,17 +175,20 @@ The `p3.swift` script introduces a postprocessing step. After all the parallel s
 	}
 	file stats<"output/average.out">;
 	stats = analyze(sims);
+
 To run:
 
 	$ cd part02
 	$ swift p3.swift
+
 The output will be named output/average.out:
+
 	$ cat output/average.out
 	51
 
 ## Part 4 - Running a parallel ensemble on OSG Connect resources
 
-This is the first script that will submit jobs to OSG through OSG connect. It is similar to earlier scripts, with a few minor exceptions. To generalize the script for other types of remote execution (e.g., when no shared filesystem is available to the compute nodes), the application simulate.sh will get transferred to the worker node by Swift, in the same manner as any other input data file. The source for the `p4.swift` script follows:
+This is the first script that will submit jobs to OSG through OSG connect. It is similar to earlier scripts, with a few minor exceptions. To generalize the script for other types of remote execution (e.g., when no shared filesystem is available to the compute nodes), the application `simulate.sh` will get transferred to the worker node by Swift, in the same manner as any other input data file. The source for the `p4.swift` script follows:
 
 	type file;
 	 
@@ -197,7 +222,8 @@ To run:
 The output will be named output/sim_N.out:
 	$ cat output/average.out
 	51
-SWIFT uses parameters in the sites.xml file to determine parameters to use when submitting jobs to HTCondor.  The key value to note is the pool element which sets the name for the pool that SWIFT submits to. Additionally, the +ProjectName value needs to be set to the project that you're submitting as.The source for the sites.xml file follows:
+	
+SWIFT uses parameters in the `sites.xml` file to determine parameters to use when submitting jobs to HTCondor.  The key value to note is the pool element which sets the name for the pool that SWIFT submits to. Additionally, the `+ProjectName` value needs to be set to the project that you're submitting as.The source for the `sites.xml` file follows:
 
 	<config>
 	  <pool handle="osg">
@@ -221,12 +247,15 @@ SWIFT uses parameters in the sites.xml file to determine parameters to use when 
 	    <profile namespace="globus" key="jobType">nonshared</profile>
 	  </pool>
 	</config>
+
 The other file that SWIFT uses is the apps file.  This file lays out the mappings between applications used in the SWIFT script files and the actual binaries for each pool.  E,g:
+
 	osg sh /bin/bash
  
 ## Part 5 - Linking applications together on OSG-Connect
 
-The `p5.swift` introduces a postprocessing step. After all the parallel simulations have completed, the files created by simulation.sh will be averaged by stats.sh. This is similar to p3, but all app invocations are done on remote nodes with Swift managing file transfers.  The source for p5.swift follows:
+The `p5.swift` introduces a postprocessing step. After all the parallel simulations have completed, the files created by simulation.sh will be averaged by stats.sh. This is similar to p3, but all app invocations are done on remote nodes with Swift managing file transfers.  The source for `p5.swift` follows:
+	
 	type file;
 	# Define external application programs to be invoked
 	file simulation_prog <"app/simulate.sh">;
@@ -264,11 +293,15 @@ The `p5.swift` introduces a postprocessing step. After all the parallel simulati
 	stats = analyze(analysis_prog,sims);
  
 To run:
+
 	$ cd part05
 	$ swift p5.swift
+
 The output will be named output/stats.out:
+
 	$ cat output/stats.out
 	5143382
+
 ## Part 6 - Specifying more complex workflow patterns
 
 The `p6.swift` script builds on p5.swift, but adds new apps for generating a random seed and a random bias value.  The script's source is shown below:
@@ -320,10 +353,14 @@ The `p6.swift` script builds on p5.swift, but adds new apps for generating a ran
 	}
 	file stats<"output/stats.out">;            # Final output file: average of all "simulations"
 	stats = analyze(analysis_prog,sims);
+
 To run:
+
 	$ cd part06
 	$ swift p6.swift
+
 The output will be named output/stats.out:
+
 	$ cat output/stats.out
 	4407482
  
