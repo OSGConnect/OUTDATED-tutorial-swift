@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This is a quick introduction to using SWIFT on OSG Connect. [SWIFT](http://swift-lang.org/main/index.php) is a parallel scripting language that lets you easily incorporate workflows using different applications and convert them into a simple script file.  The SWIFT runtime takes this script and tries to run as much of the workflow in parallel as possible. Once you finish using the exercises on this page you will be able to create workflows in SWIFT.
+This is a quick introduction to using Swift on OSG Connect. [Swift](http://swift-lang.org/main/index.php) is a parallel scripting language that lets you easily incorporate workflows using different applications and convert them into a simple script file.  The Swift runtime takes this script and tries to run as much of the workflow in parallel as possible. Once you finish using the exercises on this page you will be able to create workflows in Swift.
 
 ## Conventions
 
@@ -13,7 +13,7 @@ The following conventions are used throughout this document:
 	$ source setup.sh
 
   * Each part of the exercises below is located in a separate directory (e.g. part01, part02, ...)
-  * To cleanup the directory and remove all outputs, after running SWIFT, run in the exercise directory:
+  * To cleanup the directory and remove all outputs, after running Swift, run in the exercise directory:
  
 	$ ../bin/cleanup
 
@@ -110,7 +110,7 @@ The `stats.sh` script serves as a trivial model of an `analysis` program. It rea
 
 The first swift script, `p1.swift`, runs `simulate.sh` to generate a single random number. It writes the number to a file. 
 
-In the `p1.swift` file below, the [app](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_mapping_of_app_semantics_into_unix_process_execution_semantics) construct is used to tell SWIFT how to use the `simulate.sh` script and what the script expects for its inputs and outputs. The simulate application gets translated to `simulate.sh` using the apps file for the mapping. The [file](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_the_single_file_mapper) construct indicates the name of the file used to hold the output from the simulate script. The source for the `p1.swift` file follows:
+In the `p1.swift` file below, the [app](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_mapping_of_app_semantics_into_unix_process_execution_semantics) construct is used to tell Swift how to use the `simulate.sh` script and what the script expects for its inputs and outputs. The simulate application gets translated to `simulate.sh` using the apps file for the mapping. The [file](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_the_single_file_mapper) construct indicates the name of the file used to hold the output from the simulate script. The source for the `p1.swift` file follows:
 
 	type file;
 	app (file o) mysim ()
@@ -229,7 +229,7 @@ The output will be named `output/sim_N.out`:
 	$ cat output/average.out
 	51
 	
-SWIFT uses parameters in the `sites.xml` file to determine parameters to use when submitting jobs to HTCondor.  The key value to note is the pool element which sets the name for the pool that SWIFT submits to. Additionally, the `+ProjectName` value needs to be set to the project that you're submitting as.The source for the `sites.xml` file follows:
+Swift uses parameters in the `sites.xml` file to determine parameters to use when submitting jobs to HTCondor.  The key value to note is the pool element which sets the name for the pool that Swift submits to. Additionally, the `+ProjectName` value needs to be set to the project that you're submitting as.The source for the `sites.xml` file follows:
 
 	<config>
 	  <pool handle="osg">
@@ -254,7 +254,7 @@ SWIFT uses parameters in the `sites.xml` file to determine parameters to use whe
 	  </pool>
 	</config>
 
-The other file that SWIFT uses is the apps file.  This file lays out the mappings between applications used in the SWIFT script files and the actual binaries for each pool.  E.g.:
+The other file that Swift uses is the apps file.  This file lays out the mappings between applications used in the Swift script files and the actual binaries for each pool.  E.g.:
 
 	osg sh /bin/bash
  
@@ -374,8 +374,8 @@ The output will be named output/stats.out:
 ## Further information and references
 
 * [Latest version of this tutorial](http://swift-lang.org/links/cic-tutorial.html)
-* [SWIFT user guide](http://swift-lang.org/guides/release-0.94/userguide/userguide.html)
-* [SWIFT documentation](http://swift-lang.org/docs/index.php)
+* [Swift user guide](http://swift-lang.org/guides/release-0.94/userguide/userguide.html)
+* [Swift documentation](http://swift-lang.org/docs/index.php)
 
 ## Getting Help
 For assistance or questions, please email the OSG User Support team  at [user-support@opensciencegrid.org](mailto:user-support@opensciencegrid.org)
