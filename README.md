@@ -8,7 +8,7 @@ This is a quick introduction to using SWIFT on OSG Connect. [SWIFT](http://swift
 
 The following conventions are used throughout this document: 
   * All of the following exercises must be done using the BASH shell
-  * The setup.sh in the tutorial directory is sourced before running any of the tutorial:
+  * The `setup.sh` in the tutorial directory is sourced before running any of the tutorial:
   
 	$ source setup.sh
 
@@ -25,7 +25,7 @@ The introductory exercises use two different mock "science applications" that ac
 
 ##### simulate.sh
 
-The simulation.sh script is a simple substitute for a scientific simulation application. It generates and prints a set of one or more random integers in the range 0-29,999 as controlled by its optional arguments.
+The `simulation.sh` script is a simple substitute for a scientific simulation application. It generates and prints a set of one or more random integers in the range 0-29,999 as controlled by its optional arguments.
 
 	$ ./app/simulate.sh --help 
 	./app/simulate.sh: 
@@ -57,7 +57,7 @@ Argument       |      Description
 -x,--scale     |  scale the results by this integer [1]
 -h,-?,?,--help |  print this help
 
-With no arguments, simulate.sh prints 1 number in the range of 1-100. Otherwise it generates n numbers of the form R * scale + bias where R is a random integer. By default it logs information about its execution environment to stderr. Here are some examples of its usage:
+With no arguments, `simulate.sh` prints 1 number in the range of 1-100. Otherwise it generates n numbers of the form R * scale + bias where R is a random integer. By default it logs information about its execution environment to stderr. Here are some examples of its usage:
 
 	$ simulate.sh 2>log
 	       5
@@ -92,7 +92,7 @@ With no arguments, simulate.sh prints 1 number in the range of 1-100. Otherwise 
 
 ##### stats.sh 
 
-The stats.sh script serves as a trivial model of an "analysis" program. It reads N files each containing M integers and simply prints the average of all those numbers to stdout. Similarly to simulate.sh, it logs environmental information to the stderr. Here's an example of running the stats.sh script:
+The `stats.sh` script serves as a trivial model of an "analysis" program. It reads N files each containing M integers and simply prints the average of all those numbers to stdout. Similarly to `simulate.sh`, it logs environmental information to the stderr. Here's an example of running the `stats.sh` script:
 
 	$ ls f*
 	f1  f2  f3  f4
@@ -108,9 +108,9 @@ The stats.sh script serves as a trivial model of an "analysis" program. It reads
 
 ## Part 1 - Run an application under Swift
 
-The first swift script, `p1.swift`, runs simulate.sh to generate a single random number. It writes the number to a file. 
+The first swift script, `p1.swift`, runs `simulate.sh` to generate a single random number. It writes the number to a file. 
 
-In the `p1.swift` file below, the [app](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_mapping_of_app_semantics_into_unix_process_execution_semantics) construct is used to tell SWIFT how to use the simulate.sh script and what the script expects for its inputs and outputs. The simulate application gets translated to simulate.sh using the apps file for the mapping. The [file](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_the_single_file_mapper) construct indicates the name of the file used to hold the output from the simulate script. The source for the p1.swift file follows:
+In the `p1.swift` file below, the [app](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_mapping_of_app_semantics_into_unix_process_execution_semantics) construct is used to tell SWIFT how to use the `simulate.sh` script and what the script expects for its inputs and outputs. The simulate application gets translated to `simulate.sh` using the apps file for the mapping. The [file](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_the_single_file_mapper) construct indicates the name of the file used to hold the output from the simulate script. The source for the `p1.swift` file follows:
 
 	type file;
 	app (file o) mysim ()
@@ -153,7 +153,7 @@ Output files will be named output/sim_N.out:
  
 ## Part 3 - merging/reducing the results of a parallel foreach loop
 
-The `p3.swift` script introduces a postprocessing step. After all the parallel simulations have completed, the files created by simulation.sh will be averaged by stats.sh.  The [@filenames](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_filenames) functions is used to store filenames being transfer outputs from the simulate scripts to the stats script. The source for the p3.swift script follows:
+The `p3.swift` script introduces a postprocessing step. After all the parallel simulations have completed, the files created by `simulation.sh` will be averaged by `stats.sh`.  The [@filenames](http://swift-lang.org/guides/release-0.94/userguide/userguide.html#_filenames) functions is used to store filenames being transfer outputs from the simulate scripts to the stats script. The source for the `p3.swift` script follows:
 
 	type file;
 	app (file o) mysim (int sim_steps, int sim_values)
@@ -181,7 +181,7 @@ To run:
 	$ cd part02
 	$ swift p3.swift
 
-The output will be named output/average.out:
+The output will be named `output/average.out`:
 
 	$ cat output/average.out
 	51
@@ -215,11 +215,14 @@ This is the first script that will submit jobs to OSG through OSG connect. It is
 	   file simlog <single_file_mapper; file=@strcat("output/sim_",i,".log")>;
 	   (simout,simlog) = simulation(simulation_prog, steps, range);
 	}
+
 To run:
 
 	$ cd part04
 	$ swift p4.swift
-The output will be named output/sim_N.out:
+
+The output will be named `output/sim_N.out`:
+
 	$ cat output/average.out
 	51
 	
@@ -248,13 +251,13 @@ SWIFT uses parameters in the `sites.xml` file to determine parameters to use whe
 	  </pool>
 	</config>
 
-The other file that SWIFT uses is the apps file.  This file lays out the mappings between applications used in the SWIFT script files and the actual binaries for each pool.  E,g:
+The other file that SWIFT uses is the apps file.  This file lays out the mappings between applications used in the SWIFT script files and the actual binaries for each pool.  E.g.:
 
 	osg sh /bin/bash
  
 ## Part 5 - Linking applications together on OSG-Connect
 
-The `p5.swift` introduces a postprocessing step. After all the parallel simulations have completed, the files created by simulation.sh will be averaged by stats.sh. This is similar to p3, but all app invocations are done on remote nodes with Swift managing file transfers.  The source for `p5.swift` follows:
+The `p5.swift` introduces a postprocessing step. After all the parallel simulations have completed, the files created by `simulation.sh` will be averaged by `stats.sh`. This is similar to p3, but all app invocations are done on remote nodes with Swift managing file transfers.  The source for `p5.swift` follows:
 	
 	type file;
 	# Define external application programs to be invoked
