@@ -21,7 +21,7 @@ The following conventions are used throughout this document:
 
 ### Scripts
 
-The introductory exercises use two different mock "science applications" that act as simple stand-ins for real since applications.
+The introductory exercises use two different mock `science applications` that act as simple stand-ins for real since applications.
 
 ##### simulate.sh
 
@@ -92,7 +92,7 @@ With no arguments, `simulate.sh` prints 1 number in the range of 1-100. Otherwis
 
 ##### stats.sh 
 
-The `stats.sh` script serves as a trivial model of an "analysis" program. It reads N files each containing M integers and simply prints the average of all those numbers to stdout. Similarly to `simulate.sh`, it logs environmental information to the stderr. Here's an example of running the `stats.sh` script:
+The `stats.sh` script serves as a trivial model of an `analysis` program. It reads N files each containing M integers and simply prints the average of all those numbers to stdout. Similarly to `simulate.sh`, it logs environmental information to the stderr. Here's an example of running the `stats.sh` script:
 
 	$ ls f*
 	f1  f2  f3  f4
@@ -261,6 +261,7 @@ The other file that SWIFT uses is the apps file.  This file lays out the mapping
 ## Part 5 - Linking applications together on OSG-Connect
 
 The `p5.swift` introduces a postprocessing step. After all the parallel simulations have completed, the files created by `simulation.sh` will be averaged by `stats.sh`. This is similar to p3, but all app invocations are done on remote nodes with Swift managing file transfers.  The source for `p5.swift` follows:
+
 	
 	type file;
 	# Define external application programs to be invoked
