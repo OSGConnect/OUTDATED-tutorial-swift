@@ -379,5 +379,5 @@ The output will be named output/stats.out:
 * [Swift documentation](http://swift-lang.org/docs/index.php)
 
 ## Getting Help
-For assistance or questions, please email the OSG User Support team  at [user-support@opensciencegrid.org](mailto:user-support@opensciencegrid.org)
+For assistance or questions, please email the OSG User Support team  at [support@opensciencegrid.org](mailto:support@opensciencegrid.org)
  or visit the [help desk and community forums](http://support.opensciencegrid.org).
